@@ -1,330 +1,327 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { getaccount_url } from "../url/url";
-import { Row, Col } from "react-bootstrap";
-import "../chit.css"; // Import CSS file for styling
+import { chitdue_amount_update_url, dueamountunwind_url } from "./url/url";
+import ReactPaginate from "react-paginate";
+import "./chit.css"; // Import CSS file for styling
 
-const Accountdata = () => {
-  const [chitData, setChitData] = useState([]);
-  const [filteredChitData, setFilteredChitData] = useState([]);
+const Chit = () => {
+  const [PaidAmount, SetPaidAmount] = useState("");
+  const [oldPaidAmount, SetoldPaidAmount] = useState("");
+  const [chitduememberlist, setChitduememberlist] = useState([]);
+  const [pendingAmount, SetpendingAmount] = useState("");
+  const [oldpendingAmount, SetoldpendingAmount] = useState("");
+  const [filteredChitduememberlist, setFilteredChitduememberlist] = useState(
+    []
+  );
   const [filters, setFilters] = useState({
-    memberName: "",
-    fromDate: "",
-    toDate: "",
-    minCredit: "",
-    maxCredit: "",
-    minDebit: "",
-    maxDebit: "",
-  });
-  const [showCreditModal, setShowCreditModal] = useState(false);
-  const [showDebitModal, setShowDebitModal] = useState(false);
-  const [creditFormData, setCreditFormData] = useState({
-    memberName: "",
+    name: "",
+    chitName: "",
     date: "",
-    credit: "",
-    description: "",
+    paidStatus: "",
+    chitList: "",
   });
-  const [debitFormData, setDebitFormData] = useState({
-    memberName: "",
-    date: "",
-    debit: "",
-    description: "",
-  });
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [pageNumber, setPageNumber] = useState(0);
+  const [itemsPerPage] = useState(500); // Removed unused state
+  const [todaydate, settodaydate] = useState("");
+  const [selecttodaydate, setselecttodaydate] = useState("");
+  const [totalPaidAmount, setTotalPaidAmount] = useState(0);
+  const [totalPendingAmount, setTotalPendingAmount] = useState(0);
+  const [selectedOption, setSelectedOption] = useState(""); // Define selectedOption state variable
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const response = await axios.get(getaccount_url);
-      setChitData(response.data); // Assuming the data structure is an array
-      setFilteredChitData(response.data); // Initially set filtered data to all data
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-  useEffect(() => {
-    applyFilters();
-  }, [chitData, filters]);
-
-  const applyFilters = () => {
-    const filteredData = chitData.filter((chit) => {
+  const applyFilters = useCallback(() => {
+    let filteredList = chitduememberlist.filter((member) => {
       return (
-        (filters.memberName === "" ||
-          chit.memberName
-            .toLowerCase()
-            .includes(filters.memberName.toLowerCase())) &&
-        (filters.fromDate === "" ||
-          new Date(chit.date) >= new Date(filters.fromDate)) &&
-        (filters.toDate === "" ||
-          new Date(chit.date) <= new Date(filters.toDate)) &&
-        (filters.minCredit === "" ||
-          parseFloat(chit.credit) >= parseFloat(filters.minCredit)) &&
-        (filters.maxCredit === "" ||
-          parseFloat(chit.credit) <= parseFloat(filters.maxCredit)) &&
-        (filters.minDebit === "" ||
-          parseFloat(chit.debit) >= parseFloat(filters.minDebit)) &&
-        (filters.maxDebit === "" ||
-          parseFloat(chit.debit) <= parseFloat(filters.maxDebit))
+        member.member.name.toLowerCase().includes(filters.name.toLowerCase()) &&
+        member.chit_name
+          .toLowerCase()
+          .includes(filters.chitName.toLowerCase()) &&
+        member.date.includes(filters.date) &&
+        member.chit_list
+          .toLowerCase()
+          .includes(filters.chitList.toLowerCase()) &&
+        (filters.paidStatus.length > 0
+          ? filters.paidStatus === "paid"
+            ? member.member.paidStatus === "paid"
+            : member.member.paidStatus !== "paid"
+          : true)
       );
     });
-    setFilteredChitData(filteredData);
+    setFilteredChitduememberlist(filteredList);
+  }, [chitduememberlist, filters]);
+
+  useEffect(() => {
+    getchitduememberlist();
+    const today = new Date().toISOString().split("T")[0];
+    settodaydate(today);
+    setselecttodaydate(today);
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  useEffect(() => {
+    let totalPaid = 0;
+    let totalPending = 0;
+    filteredChitduememberlist.forEach((member) => {
+      totalPaid += parseFloat(member.member.paid_amount);
+      totalPending += parseFloat(member.member.pending_amount);
+    });
+    setTotalPaidAmount(totalPaid);
+    setTotalPendingAmount(totalPending);
+  }, [filteredChitduememberlist]);
+
+  const getchitduememberlist = async () => {
+    try {
+      const response = await axios.get(dueamountunwind_url);
+      setChitduememberlist(response.data);
+    } catch (error) {
+      console.error("Error fetching chit master list:", error);
+    }
   };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [name]: value,
-    }));
+    setFilters({ ...filters, [name]: value });
   };
 
-  const handleCreditFormChange = (e) => {
-    const { name, value } = e.target;
-    setCreditFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+  const handleUpdate = async () => {
+    const totallpaid = parseFloat(oldPaidAmount) + parseFloat(PaidAmount);
+    console.log(totallpaid);
+    try {
+      const payload = {
+        id: selectedMember._id,
+        paidamount: totallpaid,
+        amount: pendingAmount,
+        memberId: selectedMember.member.member_id,
+        paidStatus: selectedOption,
+        amount_date: selecttodaydate,
+        current_paid_amount: PaidAmount,
+        date: selecttodaydate,
+      };
+      const response = await axios.post(chitdue_amount_update_url, payload);
+      console.log(response.data);
+      setShowModal(false);
+      getchitduememberlist();
+    } catch (error) {
+      console.error("Error updating member:", error);
+    }
   };
 
-  const handleDebitFormChange = (e) => {
-    const { name, value } = e.target;
-    setDebitFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+  const openModal = (member) => {
+    setSelectedMember(member);
+    SetoldpendingAmount(member.member.pending_amount);
+    SetoldPaidAmount(member.member.paid_amount);
+    setShowModal(true);
   };
 
-  const handleCreditSubmit = () => {
-    // Implement credit submission logic here
-    // After successful submission, close the modal
-    setShowCreditModal(false);
-  };
-
-  const handleDebitSubmit = () => {
-    // Implement debit submission logic here
-    // After successful submission, close the modal
-    setShowDebitModal(false);
-  };
-
-  const totalCredit = filteredChitData.reduce(
-    (total, chit) => total + parseFloat(chit.credit),
-    0
-  );
-  const totalDebit = filteredChitData.reduce(
-    (total, chit) => total + parseFloat(chit.debit),
-    0
+  const indexOfLastItem = (pageNumber + 1) * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredChitduememberlist.slice(
+    indexOfFirstItem,
+    indexOfLastItem
   );
 
+  const handlePageChange = ({ selected }) => {
+    setPageNumber(selected);
+  };
+
+  const pageCount = Math.ceil(filteredChitduememberlist.length / itemsPerPage);
+
+  const pendingcal = (e) => {
+    SetPaidAmount(e);
+    const pending = oldpendingAmount - e;
+    SetpendingAmount(pending);
+  };
   return (
-    <div className="container">
-      <br />
-      <Row>
-        <Col>
+    <div>
+      <h5>Due List</h5>
+      <div className="filter-container">
+        <div className="left-inputs">
           <input
             type="text"
-            name="memberName"
-            value={filters.memberName}
+            name="name"
+            placeholder="Filter by Name"
+            value={filters.name}
             onChange={handleFilterChange}
-            className="form-control"
-            placeholder="Member Name"
-            style={{ width: "200px" }}
           />
-        </Col>
-        <Col>
+          <input
+            type="text"
+            name="chitName"
+            placeholder="Filter by Chit Name"
+            value={filters.chitName}
+            onChange={handleFilterChange}
+          />
+        </div>
+        <div className="right-inputs">
           <input
             type="date"
-            name="fromDate"
-            value={filters.fromDate}
+            name="date"
+            placeholder="Filter by Date"
+            value={filters.date}
             onChange={handleFilterChange}
-            className="form-control"
           />
-        </Col>
-        <Col>
           <input
-            type="date"
-            name="toDate"
-            value={filters.toDate}
+            type="text"
+            name="chitList"
+            placeholder="Filter by Chit List"
+            value={filters.chitList}
             onChange={handleFilterChange}
-            className="form-control"
           />
-        </Col>
-        <Col>
-          <input
-            type="number"
-            name="minCredit"
-            value={filters.minCredit}
+          <select
+            name="paidStatus"
             onChange={handleFilterChange}
-            className="form-control"
-            placeholder="Min Credit"
-          />
-        </Col>
-        <Col>
-          <input
-            type="number"
-            name="maxCredit"
-            value={filters.maxCredit}
-            onChange={handleFilterChange}
-            className="form-control"
-            placeholder="Max Credit"
-          />
-        </Col>
-        <Col>
-          <input
-            type="number"
-            name="minDebit"
-            value={filters.minDebit}
-            onChange={handleFilterChange}
-            className="form-control"
-            placeholder="Min Debit"
-          />
-        </Col>
-        <Col>
-          <input
-            type="number"
-            name="maxDebit"
-            value={filters.maxDebit}
-            onChange={handleFilterChange}
-            className="form-control"
-            placeholder="Max Debit"
-          />
-        </Col>
-      </Row>{" "}
-      <br />
-      <div className="total-section">
-        <h4>Total Credit: {totalCredit}</h4>
-        <h4>Total Debit: {totalDebit}</h4>
-        <button onClick={() => setShowCreditModal(true)}>
-          Add Credit note
-        </button>
-        <button onClick={() => setShowDebitModal(true)}>Add Debit note</button>
+            value={filters.paidStatus}
+          >
+            <option value="">All</option>
+            <option value="paid">Paid</option>
+            <option value="not paid">Not paid</option>
+          </select>
+        </div>
       </div>
-      {/* Credit Modal */}
-      {showCreditModal && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Add Credit Note</h2>
-            <button
-              className="close-btn"
-              onClick={() => setShowCreditModal(false)}
-            >
-              X
-            </button>
-            <form>
-              <label>Member Name</label>
-              <input
-                type="text"
-                placeholder="Enter member name"
-                name="memberName"
-                value={creditFormData.memberName}
-                onChange={handleCreditFormChange}
-              />
-              <label>Date</label>
-              <input
-                type="date"
-                name="date"
-                value={creditFormData.date}
-                onChange={handleCreditFormChange}
-              />
-              <label>Credit</label>
-              <input
-                type="number"
-                placeholder="Enter credit amount"
-                name="credit"
-                value={creditFormData.credit}
-                onChange={handleCreditFormChange}
-              />
-              <label>Description</label>
-              <textarea
-                rows="3"
-                placeholder="Enter description"
-                name="description"
-                value={creditFormData.description}
-                onChange={handleCreditFormChange}
-              />
-              <button type="button" onClick={handleCreditSubmit}>
-                Submit
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* Debit Modal */}
-      {showDebitModal && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Add Debit Note</h2>
-            <button
-              className="close-btn"
-              onClick={() => setShowDebitModal(false)}
-            >
-              X
-            </button>
-            <form>
-              <label>Member Name</label>
-              <input
-                type="text"
-                placeholder="Enter member name"
-                name="memberName"
-                value={debitFormData.memberName}
-                onChange={handleDebitFormChange}
-              />
-              <label>Date</label>
-              <input
-                type="date"
-                name="date"
-                value={debitFormData.date}
-                onChange={handleDebitFormChange}
-              />
-              <label>Debit</label>
-              <input
-                type="number"
-                placeholder="Enter debit amount"
-                name="debit"
-                value={debitFormData.debit}
-                onChange={handleDebitFormChange}
-              />
-              <label>Description</label>
-              <textarea
-                rows="3"
-                placeholder="Enter description"
-                name="description"
-                value={debitFormData.description}
-                onChange={handleDebitFormChange}
-              />
-              <button type="button" onClick={handleDebitSubmit}>
-                Submit
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* Display filtered data */}
-      <table className="table">
-        <thead>
+      <div className="table-wrapper">
+        <table>
           <tr>
-            <th>Member Name</th>
-            <th>Date</th>
-            <th>Credit</th>
-            <th>Debit</th>
-            <th>Description</th>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{totalPaidAmount}</td>
+            <td>{totalPendingAmount}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
           </tr>
-        </thead>
-        <tbody>
-          {filteredChitData.map((chit, index) => (
-            <tr key={index}>
-              <td>{chit.memberName}</td>
-              <td>{chit.date}</td>
-              <td>{chit.credit}</td>
-              <td>{chit.debit}</td>
-              <td>{chit.description}</td>
+          <thead>
+            <tr>
+              <th>Member Name</th>
+
+              <th>Amount</th>
+              <th>phone</th>
+              <th>paid</th>
+              <th>pending </th>
+              <th>Action</th>
+              <th>Chit Name</th>
+              <th>List</th>
+              <th>Date</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {currentItems
+              .slice()
+              .reverse()
+              .map((member, index) => {
+                console.log(
+                  member.member.name,
+                  ">>>",
+                  member?.member?.paid_amount
+                );
+
+                return (
+                  <tr key={index}>
+                    <td>{member.member.name}</td>
+                    <td>{member.amount}</td>
+                    <td>{member.member.phone}</td>
+                    <td>{member?.member?.paid_amount}</td>
+                    <td>{member?.member?.pending_amount}</td>
+                    <td>
+                      {parseInt(member.member.paid_amount) !==
+                      parseInt(member.amount) ? (
+                        <button onClick={() => openModal(member)}>Pay</button>
+                      ) : (
+                        <span>No Payment Due</span>
+                      )}
+                    </td>
+                    <td style={{ whiteSpace: "nowrap" }}>{member.chit_name}</td>
+                    <td>{member.chit_list}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{member.date}</td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      <ReactPaginate
+        previousLabel={"Previous"}
+        nextLabel={"Next"}
+        breakLabel={"..."}
+        breakClassName={"break-me"}
+        pageCount={pageCount}
+        marginPagesDisplayed={2}
+        pageRangeDisplayed={5}
+        onPageChange={handlePageChange}
+        containerClassName={"pagination"}
+        subContainerClassName={"pages pagination"}
+        activeClassName={"active"}
+      />
+
+      {/* Modal */}
+      {showModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Pay Amount</h2>
+            <input
+              type="text"
+              value={PaidAmount}
+              onChange={(e) => pendingcal(e.target.value)}
+            />
+            <div style={{ width: "100%" }}>
+              <input
+                type="text"
+                value={pendingAmount}
+                onChange={(e) => SetpendingAmount(e.target.value)}
+                readOnly
+              />
+              <input
+                type="date"
+                value={todaydate}
+                onChange={(e) => setselecttodaydate(e.target.value)}
+              />
+            </div>
+            <div>
+              <p>
+                paid Amount: {oldPaidAmount}, pending amount: {oldpendingAmount}
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="paymentSelect">Select Payment:</label>
+              <select
+                id="paymentSelect"
+                value={selectedOption}
+                onChange={(e) => {
+                  setSelectedOption(e.target.value);
+                }}
+              >
+                <option value="">Select...</option>
+                <option value="paid">Paid</option>
+                <option value="notPaid">Not Paid</option>
+              </select>
+              {selectedOption && (
+                <p>
+                  You selected:{" "}
+                  {selectedOption === "paid" ? "Paid" : "Not Paid"}
+                </p>
+              )}
+            </div>
+
+            <button onClick={handleUpdate}>Update</button>
+            <button onClick={() => setShowModal(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Display Total Paid and Pending Amount */}
+      <div>
+        <p>Total Paid Amount: {totalPaidAmount}</p>
+        <p>Total Pending Amount: {totalPendingAmount}</p>
+      </div>
     </div>
   );
 };
 
-export default Accountdata;
+export default Chit;

@@ -26,7 +26,10 @@ const Navbars = () => {
               <NavLink href="/coustomer">Customer</NavLink>
             </NavItem>
             <NavItem>
-              <NavLink href="/chit">Chit</NavLink>
+              <NavLink href="/chit">Chit every list</NavLink>
+            </NavItem>
+            <NavItem>
+              <NavLink href="/chit_due_list">due list</NavLink>
             </NavItem>
             <NavItem>
               <NavLink href="/add_chit">Add Chit</NavLink>

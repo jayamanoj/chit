@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import {
-  chit_get_url,
-  chitdue_get_url,
-  chitdue_add_url,
-  chitdue_amount_update_url,
-} from "./url/url";
+import { chit_get_url, chitdue_get_url, chitdue_add_url } from "./url/url";
 
 const ChitMaster = () => {
   const [chitMasterList, setChitMasterList] = useState([]);
@@ -59,6 +54,7 @@ const ChitMaster = () => {
           chit.member_list.forEach((member) => {
             const dueList = {
               name: member.name,
+              phone: member.phone,
               member_id: member.member_id,
               date: date,
               amount: amount,
@@ -102,32 +98,28 @@ const ChitMaster = () => {
       })
     );
   };
-  const handleUpdate = async (memberId, updatedAmount, chitId) => {
-    try {
-      const payload = {
-        id: chitId,
-        amount: updatedAmount,
-        memberId: memberId,
-      };
-      const response = await axios.post(chitdue_amount_update_url, payload);
+  // const handleUpdate = async (memberId, updatedAmount, chitId) => {
+  //   try {
+  //     const payload = {
+  //       id: chitId,
+  //       amount: updatedAmount,
+  //       memberId: memberId,
+  //     };
+  //     const response = await axios.post(chitdue_amount_update_url, payload);
 
-      console.log(response.data); // Log the response from the serverless function
-      // You can also update your state or perform any other actions based on the response
-    } catch (error) {
-      console.error("Error updating member:", error);
-      // Handle error
-    }
-  };
+  //     console.log(response.data); // Log the response from the serverless function
+  //     // You can also update your state or perform any other actions based on the response
+  //   } catch (error) {
+  //     console.error("Error updating member:", error);
+  //     // Handle error
+  //   }
+  // };
   return (
     <div className="container">
-      <form
-        onSubmit={handleSubmit}
-        className="d-flex flex-column flex-md-row align-items-center justify-content-between"
-      >
+      <form onSubmit={handleSubmit}>
         <select
           value={selectedChit}
           onChange={(e) => setSelectedChit(e.target.value)}
-          className="form-select mb-2 mb-md-0 mr-md-2"
         >
           <option value="">Select a Chit</option>
           {chitList.map((chit) => (
@@ -141,15 +133,14 @@ const ChitMaster = () => {
           required
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="form-control mb-2 mb-md-0 mr-md-2"
           style={{ width: "150px" }}
+          placeholder="date"
         />
         <input
           type="text"
           required
           value={list}
           onChange={(e) => SetList(e.target.value)}
-          className="form-control mb-2 mb-md-0 mr-md-2"
           style={{ width: "150px" }}
           placeholder="list"
         />
@@ -158,7 +149,6 @@ const ChitMaster = () => {
           required
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="form-control mb-2 mb-md-0 mr-md-2"
           placeholder="Amount"
         />
         <button type="submit" className="btn btn-primary">
@@ -246,20 +236,6 @@ const ChitMaster = () => {
                                 />
                               </td>
                               <td>{member.paidStatus}</td>
-                              <td>
-                                <button
-                                  onClick={() =>
-                                    handleUpdate(
-                                      member.member_id,
-                                      PaidAmount,
-                                      chitDue._id
-                                    )
-                                  }
-                                  className="btn btn-primary"
-                                >
-                                  Update
-                                </button>
-                              </td>
                             </tr>
                           ))}
                         </tbody>

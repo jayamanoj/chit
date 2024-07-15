@@ -138,101 +138,141 @@ const Chit = () => {
   return (
     <div>
       <h5>Due List</h5>
-      <div>
-        <input
-          type="text"
-          name="name"
-          placeholder="Filter by Name"
-          value={filters.name}
-          onChange={handleFilterChange}
-        />
-        <input
-          type="text"
-          name="chitName"
-          placeholder="Filter by Chit Name"
-          value={filters.chitName}
-          onChange={handleFilterChange}
-        />
-        <input
-          type="date"
-          name="date"
-          placeholder="Filter by Date"
-          onChange={handleFilterChange}
-        />
-        <input
-          type="text"
-          name="chitList"
-          placeholder="Filter by Chit List"
-          value={filters.chitList}
-          onChange={handleFilterChange}
-        />
-        <select
-          name="paidStatus"
-          onChange={handleFilterChange}
-          value={filters.paidStatus}
-        >
-          <option value="">All</option>
-          <option value="paid">Paid</option>
-          <option value="not paid">Not paid</option>
-        </select>
+      <div className="filter-container">
+        <div className="left-inputs">
+          <input
+            type="text"
+            name="name"
+            placeholder="Filter by Name"
+            value={filters.name}
+            onChange={handleFilterChange}
+          />
+          <input
+            type="text"
+            name="chitName"
+            placeholder="Filter by Chit Name"
+            value={filters.chitName}
+            onChange={handleFilterChange}
+          />
+        </div>
+        <div className="right-inputs">
+          <input
+            type="date"
+            name="date"
+            placeholder="Filter by Date"
+            value={filters.date}
+            onChange={handleFilterChange}
+          />
+          <input
+            type="text"
+            name="chitList"
+            placeholder="Filter by Chit List"
+            value={filters.chitList}
+            onChange={handleFilterChange}
+          />
+          <select
+            name="paidStatus"
+            onChange={handleFilterChange}
+            value={filters.paidStatus}
+          >
+            <option value="">All</option>
+            <option value="paid">Paid</option>
+            <option value="not paid">Not paid</option>
+          </select>
+        </div>
       </div>
 
-      <table className="table-wrapper">
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td>{totalPaidAmount}</td>
-          <td>{totalPendingAmount}</td>
-          <td></td>
-        </tr>
-        <thead>
+      <div className="table-wrapper">
+        <table>
           <tr>
-            <th>Member Name</th>
-            <th>Chit Name</th>
-            <th>Chit List</th>
-            <th>Date</th>
-            <th>Amount</th>
-            <th>paid Amount</th>
-            <th>pending amount</th>
-            <th>Action</th>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{totalPaidAmount}</td>
+            <td>{totalPendingAmount}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
           </tr>
-        </thead>
-        <tbody>
-          {currentItems
-            .slice()
-            .reverse()
-            .map((member, index) => {
-              console.log(
-                member.member.name,
-                ">>>",
-                member?.member?.paid_amount
-              );
+          <thead>
+            <tr>
+              <th>Member Name</th>
+              <th>call</th>
+              <th>SMS</th>
+              <th>wh</th>
+              <th>paid</th>
+              <th>pending </th>
+              <th>Action</th>
+              <th>Chit Name</th>
+              <th>Amount</th>
+              <th>List</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentItems
+              .slice()
+              .reverse()
+              .map((member, index) => {
+                console.log(
+                  member.member.name,
+                  ">>>",
+                  member?.member?.paid_amount
+                );
 
-              return (
-                <tr key={index}>
-                  <td>{member.member.name}</td>
-                  <td>{member.chit_name}</td>
-                  <td>{member.chit_list}</td>
-                  <td>{member.date}</td>
-                  <td>{member.amount}</td>
-                  <td>{member?.member?.paid_amount}</td>
-                  <td>{member?.member?.pending_amount}</td>
-                  <td>
-                    {parseInt(member.member.paid_amount) !==
-                    parseInt(member.amount) ? (
-                      <button onClick={() => openModal(member)}>Pay</button>
-                    ) : (
-                      <span>No Payment Due</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-        </tbody>
-      </table>
+                return (
+                  <tr key={index}>
+                    <td>{member.member.name}</td>
+                    <td style={{ width: "10px" }}>
+                      {" "}
+                      <a
+                        href={`tel:${member.member.phone}`}
+                        className="call-icon"
+                      >
+                        <i>&#9990;</i>
+                      </a>
+                    </td>
+                    <td>
+                      <a
+                        href={`sms:${member.member.phone}?body=your old blance=0,this chit ${member.chit_name} date at ${member.date} with this amount ${member.amount} `}
+                      >
+                        sms
+                      </a>
+                    </td>
+                    <td>
+                      {" "}
+                      <a
+                        href={`https://wa.me/91${member.member.phone}?text=your old blance=0,this chit ${member.chit_name} date at ${member.date} with this amount ${member.pending_amount} `}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Wh
+                      </a>
+                    </td>
+                    <td>{member?.member?.paid_amount}</td>
+                    <td>{member?.member?.pending_amount}</td>
+                    <td>
+                      {parseInt(member.member.paid_amount) !==
+                      parseInt(member.amount) ? (
+                        <button onClick={() => openModal(member)}>Pay</button>
+                      ) : (
+                        <span>No Due</span>
+                      )}
+                    </td>
+                    <td style={{ whiteSpace: "nowrap" }}>{member.chit_name}</td>
+                    <td>{member.amount}</td>
+
+                    <td>{member.chit_list}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{member.date}</td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination */}
       <ReactPaginate

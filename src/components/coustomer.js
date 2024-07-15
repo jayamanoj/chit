@@ -8,6 +8,8 @@ const Coustomer = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [pending_flag, setPending_flag] = useState("");
+  const [Status, SetStatus] = useState("");
+  const [OldBlance, setOldBlance] = useState("");
   const [showModal, setShowModal] = useState(false); // State to control modal visibility
 
   const handleSubmit = async (e) => {
@@ -22,6 +24,8 @@ const Coustomer = () => {
       name: name,
       phone: phone,
       pending_flag: pending_flag,
+      OldBlance: OldBlance,
+      Status: Status,
     };
     // Make API call to add customer
     try {
@@ -39,11 +43,6 @@ const Coustomer = () => {
     } catch (error) {
       console.error("Error fetching customer list:", error);
     }
-    // const data = {
-    //   name: "",
-    //   phone: "",
-    //   pending_flag: "",
-    // };
   };
 
   useEffect(() => {
@@ -60,6 +59,9 @@ const Coustomer = () => {
               &times;
             </span>
             <form onSubmit={handleSubmit}>
+              <h1>Customer Add</h1>
+              <br />
+              <label>Name:</label>
               <input
                 type="text"
                 required
@@ -67,6 +69,7 @@ const Coustomer = () => {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="name"
               />
+              <label>Phone:</label>
               <input
                 type="phone"
                 required
@@ -80,36 +83,89 @@ const Coustomer = () => {
                   type="checkbox"
                   onChange={(e) => setPending_flag(e.target.checked)}
                 />
+                <label>Blance:</label>
+                <input
+                  type="text"
+                  required
+                  value={OldBlance}
+                  onChange={(e) => setOldBlance(e.target.value)}
+                  placeholder="name"
+                />
               </label>
+              <label>Blance:</label>
+              <select
+                id="paymentSelect"
+                value={Status}
+                onChange={(e) => {
+                  SetStatus(e.target.value);
+                }}
+              >
+                <option value="">Select...</option>
+                <option value="alive">alive</option>
+                <option value="Waiting">Waiting</option>
+                <option value="OFF">OFF</option>
+              </select>
               <button type="submit">Add</button>
             </form>
           </div>
         </div>
       )}
-      <table>
-        <thead>
-          <tr>
-            <th>S.No</th>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Pending Flag</th>
-            <th>Views</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cuslist.map((customer, index) => (
-            <tr key={index}>
-              <td>{index + 1}</td>
-              <td>{customer.name}</td>
-              <td>{customer.phone}</td>
-              <td>{customer.pending_flag ? "Yes" : "No"}</td>
-              <td>
-                <a href={`/views/${customer._id}`}>Views</a>
-              </td>
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Name</th>
+              <th>Blance</th>
+              <th>call</th>
+              <th>SMS</th>
+              <th>wh</th>
+              <th>Phone</th>
+              <th>Pending Flag</th>
+              <th>Views</th>
+              <th>Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {cuslist.map((customer, index) => (
+              <tr key={index}>
+                <td>{index + 1}</td>
+                <td>{customer.name}</td>
+                <td>{customer.OldBlance}</td>
+                <td style={{ width: "10px" }}>
+                  {" "}
+                  <a href={`tel:${customer.phone}`} className="call-icon">
+                    <i>&#9990;</i>
+                  </a>
+                </td>
+                <td>
+                  <a
+                    href={`sms:${customer.phone}?body=your old blance ${customer.OldBlance}`}
+                  >
+                    sms
+                  </a>
+                </td>
+                <td>
+                  {" "}
+                  <a
+                    href={`https://wa.me/91${customer.phone}?text=your old blance ${customer.OldBlance} `}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Wh
+                  </a>
+                </td>
+                <td>{customer.phone}</td>
+                <td>{customer.pending_flag ? "Yes" : "No"}</td>
+                <td>
+                  <a href={`/views/${customer._id}`}>Views</a>
+                </td>
+                <td>{customer.Status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

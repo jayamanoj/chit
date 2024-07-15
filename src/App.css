@@ -112,3 +112,6 @@ button {
 button:hover {
   background-color: #0056b3; /* Darker shade on hover */
 }
+.table-wrapper {
+  overflow-x: auto;
+}
